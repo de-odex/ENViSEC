@@ -155,15 +155,11 @@ def sklearnise_keras(keras_model):
         keras_model,
         warm_start=True,
         fit_kwargs={
+            "batch_size": config["dnn"]["batch"],
             "epochs": config["dnn"]["epochs"],
             "verbose": config["dnn"]["verbose"],
         },
     )
-
-    # return KerasClassifier(
-    #     keras_model,
-    #     batch_size=config["dnn"]["batch"],
-    # )
 
 
 def load_dnn(input_size, output_size):
@@ -242,8 +238,8 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     )
     val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
 
-    model.set_params(fit__validation_data=(X_test, val_labels_ndry))
-    model.set_params(fit__callbacks=tf_callbacks)
+    model.fit_kwargs["validation_data"] = (X_test, val_labels_ndry)
+    model.fit_kwargs["callbacks"] = tf_callbacks
 
     print("\ntrain_labels: \n", train_labels_ndry[:2])
     # TODO correct categorizing of val_labels
@@ -453,24 +449,29 @@ if __name__ == "__main__":
 
         # save the trained model as a pickle file
         if config["model"]["save"]:
-            if config["model"]["name"] == "dnn":
-                trained_model.model_.save(model_file)
-            else:
-                pickle.dump(trained_model, open(model_file, "wb"))
+            # if config["model"]["name"] == "dnn":
+            #     trained_model.model_.save(model_file)
+            # else:
+            #     pickle.dump(trained_model, open(model_file, "wb"))
+            pickle.dump(trained_model, open(model_file, "wb"))
 
         print("The final trained model is saved at: ", model_file)
         print("\n" + "-" * 35 + "Training Completed" + "-" * 35 + "\n")
     else:
         print("Used the trained model saved at: ", model_file)
-        if config["model"]["name"] == "dnn":
-            assert (
-                model_file.exists()
-            ), f"The trained model does not exist for the prediction at: {model_file}"
-            trained_model = load_model(model_file)
-            trained_model = sklearnise_keras(trained_model)
-            # NOTE: initialize doesnt exist for this new keras wrapper
-        else:
-            trained_model = pickle.load(open(model_file, "rb"))
+        # if config["model"]["name"] == "dnn":
+        #     assert (
+        #         model_file.exists()
+        #     ), f"The trained model does not exist for the prediction at: {model_file}"
+        #     trained_model = load_model(model_file)
+        #     trained_model = sklearnise_keras(trained_model)
+        #     # NOTE: initialize doesnt exist for this new keras wrapper
+        # else:
+        #     trained_model = pickle.load(open(model_file, "rb"))
+
+        # I think the keras wrapper doesnt support saving only the keras model
+        # and reinitialising the wrapper
+        trained_model = pickle.load(open(model_file, "rb"))
 
     print("+" * 70)
     train_metrics = score_predict(trained_model, X_train, y_train)
