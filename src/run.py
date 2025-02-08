@@ -147,13 +147,13 @@ def apply_balancer(X, y):
     return X_bal, y_bal
 
 
-def sklearnise_keras(keras_model):
+def sklearnise_keras(keras_model, warm_start=False):
     # wrap model in keras scikit learn wrapper to use yellowbrick
     from keras.api.wrappers import SKLearnClassifier
 
     return SKLearnClassifier(
         keras_model,
-        warm_start=True,
+        warm_start=warm_start,
         fit_kwargs={
             "batch_size": config["dnn"]["batch"],
             "epochs": config["dnn"]["epochs"],
