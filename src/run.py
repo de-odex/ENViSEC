@@ -48,7 +48,7 @@ from src.utility import (
 )
 
 
-def split_data(data, config):
+def split_data(data):
     """split the dataset into train and test"""
     clf_type = config["model"]["type"]  # 'binary' or 'multiclass'
     label_cols = ["multi_label"]
@@ -240,8 +240,8 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     train_labels_ndry = tf.keras.utils.to_categorical(
         x=y_train, num_classes=output_size
     )
-
     val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
+
     model.set_params(fit__validation_data=(X_test, val_labels_ndry))
     model.set_params(fit__callbacks=tf_callbacks)
 
@@ -264,45 +264,24 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     )
     # print(model.summary())
 
-    print("+" * 70)
-    train_metrics = score_predict(model, X_train, y_train)
-    print("\nTrain metrics (acc, pre, rec): ", train_metrics)
-    eval_metrics = score_predict(model, X_test, y_test)
-    print("\nTest metrics (acc, pre, rec): ", eval_metrics)
-    print("+" * 70)
-
-    classes_file = Path(config["data_dir"]) / config["predict"]["classes_file"]
-    encoder = preprocessing.LabelEncoder()  # need to check
-    encoder.classes_ = np.load(classes_file, allow_pickle=True)
-
-    if config["model"]["use_neptune"]:
-        metrics.log_metrics(
-            nt_run,
-            model,
-            encoder,
-            X_train,
-            X_test,
-            y_train,
-            y_test,
-            train_metrics,
-            eval_metrics,
-        )
-
     return model, model.history_
 
 
-def score_predict(trained_model, X, y):
+def score_predict(model, X, y):
     """
     evaluate the model
     returns performance scores of the model
     """
-    y_pred = trained_model.predict(X)
+    y_pred = model.predict(X)
+    if config["model"]["name"].lower() == "dnn":
+        y_pred = np.argmax(y_pred, axis=None, out=None)
     acc = metrics.accuracy_score(y, y_pred)
     pre = metrics.precision_score(y, y_pred, average="macro")
     rec = metrics.recall_score(y, y_pred, average="macro")
     f1 = metrics.f1_score(y, y_pred, average="macro")
-    loss = metrics.log_loss(y, trained_model.predict_proba(X))
-    print("Loss: ", loss)
+    if config["model"]["name"].lower() != "dnn":
+        loss = metrics.log_loss(y, model.predict_proba(X))
+        print("Loss: ", loss)
 
     return acc, pre, rec, f1
 
@@ -338,32 +317,15 @@ def train_shallow(nt_run, model, X_train, y_train, X_test, y_test):
         y_true=y_test_label, y_pred=y_pred_label, zero_division=0
     )  # output_dict=True
 
-    if config["model"]["use_neptune"]:
-        metrics.log_metrics(
-            nt_run,
-            model,
-            encoder,
-            X_train,
-            X_test,
-            y_train,
-            y_test,
-            train_metrics,
-            eval_metrics,
-        )
-
     return clf_matrix, clf_report
 
 
-def model_train(data, config):
+def model_train(nt_run, data):
     """Train and test the model using the training data"""
     model_name = config["model"]["name"]
     # print('y_labels on total data: ', set(list(data.multi_label)))
     # X_train, X_test, y_train, y_test = split_data(data, config)
-    X_train, X_eval, _, y_train, y_eval, _ = split_data(data, config)
-
-    if config["model"]["use_neptune"]:
-        print("\n" + "-" * 30 + "Neptune" + "-" * 30 + "\n")
-        nt_run = init_neptune(config["model"]["path"])
+    X_train, X_eval, _, y_train, y_eval, _ = data
 
     # apply class balancer(s) if that is enabled at config.yaml
     if config["apply_balancer"]:
@@ -402,22 +364,21 @@ def model_train(data, config):
         clf_matrix, clf_report = train_shallow(
             nt_run, model, X_train, y_train, X_eval, y_eval
         )
-        return model, clf_matrix, clf_report
+        print("\n Classification Matrix (max): \n", clf_matrix)
+        print("\n Classification Report (max): \n", clf_report)
     else:
         model, history = train_dnn(nt_run, model, X_train, y_train, X_eval, y_eval)
-        return model, history
+        # Plot the training history
+        plot_history(config["model"]["path"] + "learnig_curves", history)
+
+    return model
 
 
-def test_model(model_file, X_test, y_test, output_size):
+def test_model(model, X_test, y_test, output_size):
     """test the trained model with testing data."""
-    assert os.path.exists(
-        model_file
-    ), f"The trained model does not exist for the prediction at: {model_file}"
     print("\n" + "-" * 35 + "Testing" + "-" * 35)
 
     # Generate generalization metrics
-    print("Used the trained model saved at: ", model_file)
-    model = load_model(model_file)
 
     X_test = X_test.values.astype(float)
     y_test = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
@@ -458,6 +419,10 @@ if __name__ == "__main__":
     )
     print(f"\n\nModel path: {config['model']['path']}")
 
+    if config["model"]["use_neptune"]:
+        print("\n" + "-" * 30 + "Neptune" + "-" * 30 + "\n")
+        nt_run = init_neptune(config["model"]["path"])
+
     if config["debug"]:
         config["model"]["path"] = config["model"]["path"].rsplit("/", 1)[0] + "-debug/"
 
@@ -474,21 +439,17 @@ if __name__ == "__main__":
     if minor_threshold >= 0:
         df = filter_minority_classes(df, minor_threshold)
 
-    # use_gpu = False
-    if config["model"]["name"] == "dnn":
-        utilize_gpu()
-        if config["train"]:
-            print("\n" + "-" * 35 + "Training" + "-" * 35)
-            trained_model, history = model_train(df, config)
-            # Plot the training history
-            plot_history(config["model"]["path"] + "learnig_curves", history)
-    else:
-        if config["train"]:
-            trained_model, clf_matrix, clf_report = model_train(df, config)
-            print("\n Classification Matrix (max): \n", clf_matrix)
-            print("\n Classification Report (max): \n", clf_report)
+    X_train, X_eval, X_test, y_train, y_eval, y_test = data = split_data(df)
 
     if config["train"]:
+        # use_gpu = False
+        if config["model"]["name"] == "dnn":
+            utilize_gpu()
+            print("\n" + "-" * 35 + "Training" + "-" * 35)
+            trained_model = model_train(nt_run, data)
+        else:
+            trained_model = model_train(nt_run, data)
+
         # save the trained model as a pickle file
         if config["model"]["save"]:
             if config["model"]["name"] == "dnn":
@@ -498,15 +459,46 @@ if __name__ == "__main__":
 
         print("The final trained model is saved at: ", model_file)
         print("\n" + "-" * 35 + "Training Completed" + "-" * 35 + "\n")
+    else:
+        print("Used the trained model saved at: ", model_file)
+        if config["model"]["name"] == "dnn":
+            assert os.path.exists(
+                model_file
+            ), f"The trained model does not exist for the prediction at: {model_file}"
+            trained_model = load_model(model_file)
+        else:
+            trained_model = pickle.load(open(model_file, "rb"))
+
+    print("+" * 70)
+    train_metrics = score_predict(trained_model, X_train, y_train)
+    print("\nTrain metrics (acc, pre, rec): ", train_metrics)
+    eval_metrics = score_predict(trained_model, X_test, y_test)
+    print("\nTest metrics (acc, pre, rec): ", eval_metrics)
+    print("+" * 70)
+
+    classes_file = Path(config["data_dir"]) / config["predict"]["classes_file"]
+    encoder = preprocessing.LabelEncoder()  # need to check
+    encoder.classes_ = np.load(classes_file, allow_pickle=True)
+
+    if config["model"]["use_neptune"]:
+        metrics.log_metrics(
+            nt_run,
+            trained_model,
+            encoder,
+            X_train,
+            X_eval,
+            y_train,
+            y_eval,
+            train_metrics,
+            eval_metrics,
+        )
 
     if config["test"]:
-        _, _, X_test, y_train, _, y_test = split_data(df, config)
         output_size = len(set(list(y_train)))
 
         if config["model"]["name"] == "dnn":
-            test_model(model_file, X_test, y_test, output_size)
+            test_model(trained_model, X_test, y_test, output_size)
         else:
-            loaded_model = pickle.load(open(model_file, "rb"))
-            result = loaded_model.score(X_test, y_test)
+            result = trained_model.score(X_test, y_test)
             print("result: ", result)
         print("\n" + "-" * 35 + "Testing Completed" + "-" * 35 + "\n")

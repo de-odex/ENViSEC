@@ -10,10 +10,6 @@ from neptune_sklearn_charts import (
 )
 
 
-def print_metrics():
-    
-
-
 def log_metrics(
     nt_run,
     trained_model,
