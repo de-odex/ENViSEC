@@ -233,17 +233,17 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     X_train = X_train.values.astype(float)
     X_test = X_test.values.astype(float)
 
-    train_labels_ndry = tf.keras.utils.to_categorical(
-        x=y_train, num_classes=output_size
-    )
-    val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
+    # train_labels_ndry = tf.keras.utils.to_categorical(
+    #     x=y_train, num_classes=output_size
+    # )
+    # val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
 
-    model.fit_kwargs["validation_data"] = (X_test, val_labels_ndry)
+    model.fit_kwargs["validation_data"] = (X_test, y_test)
     model.fit_kwargs["callbacks"] = tf_callbacks
 
-    print("\ntrain_labels: \n", train_labels_ndry[:2])
+    # print("\ntrain_labels: \n", train_labels_ndry[:2])
     # TODO correct categorizing of val_labels
-    print("val_labels: \n", val_labels_ndry[:2])
+    # print("val_labels: \n", val_labels_ndry[:2])
     print("\nX sample: \n", X_train[:2])
     print("-" * 70)
     # multi-level class weights
@@ -256,7 +256,7 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     # fit the model
     model.fit(
         X_train,
-        train_labels_ndry,
+        y_train,
     )
     # print(model.summary())
 
