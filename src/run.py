@@ -30,7 +30,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import class_weight
-# from sklearn import metrics
+from sklearn import metrics
 
 from keras.api.models import load_model
 from keras.api.optimizers import Adam, SGD
@@ -38,7 +38,7 @@ from keras.api.optimizers import Adam, SGD
 # import tensorflow_addons as tfa
 
 from src.models import create_DNN, create_LSTM
-import src.metrics as metrics
+import src.metrics as metrics2
 from src.utility import (
     init_neptune,
     load_config,
@@ -488,7 +488,7 @@ if __name__ == "__main__":
     encoder.classes_ = np.load(classes_file, allow_pickle=True)
 
     if config["model"]["use_neptune"]:
-        metrics.log_metrics(
+        metrics2.log_metrics(
             nt_run,
             trained_model,
             encoder,
