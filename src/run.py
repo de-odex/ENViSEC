@@ -30,7 +30,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils import class_weight
-from sklearn import metrics
+# from sklearn import metrics
 
 from keras.api.models import load_model
 from keras.api.optimizers import Adam, SGD
@@ -38,6 +38,7 @@ from keras.api.optimizers import Adam, SGD
 # import tensorflow_addons as tfa
 
 from src.models import create_DNN, create_LSTM
+import src.metrics as metrics
 from src.utility import (
     init_neptune,
     load_config,
@@ -276,8 +277,6 @@ def score_predict(model, X, y):
     returns performance scores of the model
     """
     y_pred = model.predict(X)
-    if config["model"]["name"].lower() == "dnn":
-        y_pred = np.argmax(y_pred, axis=None, out=None)
     acc = metrics.accuracy_score(y, y_pred)
     pre = metrics.precision_score(y, y_pred, average="macro")
     rec = metrics.recall_score(y, y_pred, average="macro")
@@ -473,6 +472,7 @@ if __name__ == "__main__":
             ), f"The trained model does not exist for the prediction at: {model_file}"
             trained_model = load_model(model_file)
             trained_model = sklearnise_keras(trained_model)
+            trained_model.initialize(X_train, y_train)
         else:
             trained_model = pickle.load(open(model_file, "rb"))
 
