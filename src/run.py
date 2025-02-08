@@ -184,10 +184,10 @@ def load_dnn(input_size, output_size):
         # validation_steps=len(train_generator.filenames) // batch_size,
         # callbacks=[EarlyStopping(patience=1, restore_best_weights=True)],
         batch_size=config["dnn"]["batch"],
-        epochs=config["dnn"]["epochs"],
+        fit__epochs=config["dnn"]["epochs"],
         # validation_split=config['model']['split_ratio'],
         # validation_data=(X_test, val_labels_ndry),
-        verbose=config["dnn"]["verbose"],
+        fit__verbose=config["dnn"]["verbose"],
         # class_weight=class_weights,
         # use_multiprocessing=True,
         # callbacks=[tf_callbacks],
@@ -240,8 +240,8 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     )
 
     val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
-    model.set_params(validation_data=(X_test, val_labels_ndry))
-    model.set_params(callbacks=tf_callbacks)
+    model.set_params(fit__validation_data=(X_test, val_labels_ndry))
+    model.set_params(fit__callbacks=tf_callbacks)
 
     print("\ntrain_labels: \n", train_labels_ndry[:2])
     # TODO correct categorizing of val_labels
