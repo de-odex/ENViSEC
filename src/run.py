@@ -429,7 +429,7 @@ if __name__ == "__main__":
 
     if config["model"]["use_neptune"]:
         print("\n" + "-" * 30 + "Neptune" + "-" * 30 + "\n")
-        nt_run = init_neptune(config["model"]["path"])
+        nt_run = init_neptune(str(config["model"]["path"]))
 
     if config["debug"]:
         config["model"]["path"] = config["model"]["path"].rsplit("/", 1)[0] + "-debug/"
