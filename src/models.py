@@ -80,7 +80,6 @@ def create_multiDNN(input_dim, output_size, dropout_rate):
     model.add(Dense(150, activation="relu"))
     model.add(Dropout(0.2))
     model.add(Dense(output_size, activation="softmax"))
-    print(model.summary())
     return model
 
 
@@ -102,5 +101,4 @@ def create_LSTM(input_dim, output_size, dropout_rate):
     model.add(Dropout(0.2))
     model.add(Dense(output_size, activation="softmax"))
 
-    print(model.summary())
     return model

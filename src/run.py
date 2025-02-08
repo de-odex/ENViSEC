@@ -171,6 +171,8 @@ def load_dnn(input_size, output_size):
     # Lets save our current model state so we can reload it later
     model.save_weights(config["model"]["path"] + "pre-fit.weights.h5")
 
+    model.summary()
+
     # wrap model in keras scikit learn wrapper to use yellowbrick
 
     from scikeras.wrappers import KerasClassifier
@@ -472,7 +474,7 @@ if __name__ == "__main__":
     if minor_threshold >= 0:
         df = filter_minority_classes(df, minor_threshold)
 
-    use_gpu = False
+    # use_gpu = False
     if config["model"]["name"] == "dnn":
         utilize_gpu()
         if config["train"]:
