@@ -169,7 +169,7 @@ def load_dnn(input_size, output_size):
 
     model.compile(optimizer=optim, loss=config["dnn"]["loss"], metrics=metrics)
     # Lets save our current model state so we can reload it later
-    model.save_weights(config["model"]["path"] + "pre-fit.weights.h5")
+    model.save_weights(str(config["model"]["path"] / "pre-fit.weights.h5"))
 
     model.summary()
 
@@ -213,12 +213,12 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
             restore_best_weights=True,
         ),
         tf.keras.callbacks.ModelCheckpoint(
-            filepath=config["model"]["path"] + "checkpoint_model.h5",
+            filepath=str(config["model"]["path"] / "checkpoint_model.h5"),
             save_best_only=True,
             monitor="val_loss",
             mode="min",
         ),
-        tf.keras.callbacks.TensorBoard(log_dir=config["model"]["path"] + "logs/"),
+        tf.keras.callbacks.TensorBoard(log_dir=str(config["model"]["path"] / "logs")),
     ]
 
     if config["model"]["use_neptune"]:
@@ -410,15 +410,11 @@ if __name__ == "__main__":
     # pick model name from command line arg otherwise from config file.
     config["model"]["name"] = paras.model if paras.model else config["model"]["name"]
 
-    config["model"]["path"] = (
-        config["result_dir"]
-        + config["model"]["name"]
-        + "-"
-        + str(config["dnn"]["epochs"])
-        + "-"
-        + Path(data_file).stem
-        + "/"
+    config["model"]["path"] = Path(config["result_dir"]) / (
+        f"{config['model']['name']}-{config['dnn']['epochs']}-{Path(data_file).stem}"
     )
+
+    model_file = config["model"]["path"] / "model-final.h5"
     print(f"\n\nModel path: {config['model']['path']}")
 
     if config["model"]["use_neptune"]:
@@ -430,8 +426,6 @@ if __name__ == "__main__":
 
     if config["train"]:
         Path(config["model"]["path"]).mkdir(parents=True, exist_ok=True)
-
-    model_file = config["model"]["path"] + "model-final.h5"
 
     # loading the data from the processed csv file for training/testing
     df = load_data(data_file)
@@ -464,11 +458,9 @@ if __name__ == "__main__":
     else:
         print("Used the trained model saved at: ", model_file)
         if config["model"]["name"] == "dnn":
-            assert Path(
-                model_file
-            ).exists(), (
-                f"The trained model does not exist for the prediction at: {model_file}"
-            )
+            assert (
+                model_file.exists()
+            ), f"The trained model does not exist for the prediction at: {model_file}"
             trained_model = load_model(model_file)
         else:
             trained_model = pickle.load(open(model_file, "rb"))
