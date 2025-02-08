@@ -148,3 +148,7 @@ test.ipynb
 check.py
 test.py
 
+
+# pixi environments
+.pixi
+*.egg-info
