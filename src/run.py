@@ -410,9 +410,16 @@ if __name__ == "__main__":
     # pick model name from command line arg otherwise from config file.
     config["model"]["name"] = paras.model if paras.model else config["model"]["name"]
 
-    config["model"]["path"] = Path(config["result_dir"]) / (
-        f"{config['model']['name']}-{config['dnn']['epochs']}-{Path(data_file).stem}"
-    )
+    match config["model"]["name"].lower():
+        case "basic-dnn" | "dnn":
+            config["model"]["path"] = Path(config["result_dir"]) / (
+                f"{config['model']['name']}-{config['dnn']['epochs']}-"
+                + f"{config['dnn']['batch']}-{config['dnn']['lr']}-{Path(data_file).stem}"
+            )
+        case _:
+            config["model"]["path"] = Path(config["result_dir"]) / (
+                f"{config['model']['name']}-{Path(data_file).stem}"
+            )
 
     model_file = config["model"]["path"] / "model-final.h5"
     print(f"\n\nModel path: {config['model']['path']}")
