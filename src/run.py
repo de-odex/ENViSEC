@@ -177,12 +177,20 @@ def load_dnn(input_size, output_size):
 
     model = KerasClassifier(
         model,
-        train_generator=train_generator,
-        epochs=10,
-        steps_per_epoch=len(train_generator.filenames) // batch_size,
-        validation_data=validation_generator,
-        validation_steps=len(train_generator.filenames) // batch_size,
-        callbacks=[EarlyStopping(patience=1, restore_best_weights=True)],
+        # train_generator=train_generator,
+        # epochs=10,
+        # steps_per_epoch=len(train_generator.filenames) // batch_size,
+        # validation_data=validation_generator,
+        # validation_steps=len(train_generator.filenames) // batch_size,
+        # callbacks=[EarlyStopping(patience=1, restore_best_weights=True)],
+        batch_size=config["dnn"]["batch"],
+        epochs=config["dnn"]["epochs"],
+        # validation_split=config['model']['split_ratio'],
+        # validation_data=(X_test, val_labels_ndry),
+        verbose=config["dnn"]["verbose"],
+        # class_weight=class_weights,
+        # use_multiprocessing=True,
+        # callbacks=[tf_callbacks],
     )
 
     return model
@@ -214,7 +222,7 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
 
         # print('\n' + '-' * 30 + 'Neptune' + '-' * 30 + '\n')
         # nt_run = init_neptune(config['model']['path'])
-        neptune_cbk = NeptuneCallback(run=nt_run, base_namespace="metrics")
+        neptune_cbk = NeptuneCallback(run=nt_run, base_namespace="metrics/keras")
         tf_callbacks.append(neptune_cbk)
 
     print("\nOutput_size: ", output_size)
@@ -230,6 +238,8 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     )
 
     val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
+    model.set_params(validation_data=(X_test, val_labels_ndry))
+    model.set_params(callbacks=tf_callbacks)
 
     print("\ntrain_labels: \n", train_labels_ndry[:2])
     # TODO correct categorizing of val_labels
@@ -244,20 +254,37 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     print("Class_weights: ", class_weights)
 
     # fit the model
-    history = model.fit(
+    model.fit(
         X_train,
         train_labels_ndry,
-        batch_size=config["dnn"]["batch"],
-        epochs=config["dnn"]["epochs"],
-        # validation_split=config['model']['split_ratio'],
-        validation_data=(X_test, val_labels_ndry),
-        verbose=config["dnn"]["verbose"],
-        # class_weight=class_weights,
-        # use_multiprocessing=True,
-        callbacks=[tf_callbacks],
     )
     # print(model.summary())
-    return model, history
+
+    print("+" * 70)
+    train_metrics = score_predict(model, X_train, y_train)
+    print("\nTrain metrics (acc, pre, rec): ", train_metrics)
+    eval_metrics = score_predict(model, X_test, y_test)
+    print("\nTest metrics (acc, pre, rec): ", eval_metrics)
+    print("+" * 70)
+
+    classes_file = Path(config["data_dir"]) / config["predict"]["classes_file"]
+    encoder = preprocessing.LabelEncoder()  # need to check
+    encoder.classes_ = np.load(classes_file, allow_pickle=True)
+
+    if config["model"]["use_neptune"]:
+        metrics.log_metrics(
+            nt_run,
+            model,
+            encoder,
+            X_train,
+            X_test,
+            y_train,
+            y_test,
+            train_metrics,
+            eval_metrics,
+        )
+
+    return model, model.history_
 
 
 def score_predict(trained_model, X, y):
@@ -276,17 +303,17 @@ def score_predict(trained_model, X, y):
     return acc, pre, rec, f1
 
 
-def train_shallow(nt_run, trained_model, X_train, y_train, X_test, y_test):
+def train_shallow(nt_run, model, X_train, y_train, X_test, y_test):
     """training of non-dnn models"""
-    trained_model.fit(X_train, y_train)
+    model.fit(X_train, y_train)
     print("+" * 70)
-    train_metrics = score_predict(trained_model, X_train, y_train)
+    train_metrics = score_predict(model, X_train, y_train)
     print("\nTrain metrics (acc, pre, rec): ", train_metrics)
-    eval_metrics = score_predict(trained_model, X_test, y_test)
+    eval_metrics = score_predict(model, X_test, y_test)
     print("\nTest metrics (acc, pre, rec): ", eval_metrics)
     print("+" * 70)
 
-    y_pred = trained_model.predict(X_test)
+    y_pred = model.predict(X_test)
     # encoder = preprocessing.LabelEncoder() # need to check
     # y_pred_label = list(encoder.inverse_transform(y_pred))
     # y_test_label = list(encoder.inverse_transform(y_test))
@@ -310,7 +337,7 @@ def train_shallow(nt_run, trained_model, X_train, y_train, X_test, y_test):
     if config["model"]["use_neptune"]:
         metrics.log_metrics(
             nt_run,
-            trained_model,
+            model,
             encoder,
             X_train,
             X_test,
