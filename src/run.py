@@ -146,6 +146,29 @@ def apply_balancer(X, y):
     return X_bal, y_bal
 
 
+def sklearnise_keras(keras_model):
+    # wrap model in keras scikit learn wrapper to use yellowbrick
+    from scikeras.wrappers import KerasClassifier
+
+    return KerasClassifier(
+        keras_model,
+        # train_generator=train_generator,
+        # epochs=10,
+        # steps_per_epoch=len(train_generator.filenames) // batch_size,
+        # validation_data=validation_generator,
+        # validation_steps=len(train_generator.filenames) // batch_size,
+        # callbacks=[EarlyStopping(patience=1, restore_best_weights=True)],
+        batch_size=config["dnn"]["batch"],
+        fit__epochs=config["dnn"]["epochs"],
+        # validation_split=config['model']['split_ratio'],
+        # validation_data=(X_test, val_labels_ndry),
+        fit__verbose=config["dnn"]["verbose"],
+        # class_weight=class_weights,
+        # use_multiprocessing=True,
+        # callbacks=[tf_callbacks],
+    )
+
+
 def load_dnn(input_size, output_size):
     metrics = ["accuracy", "Precision", "Recall"]
 
@@ -173,27 +196,7 @@ def load_dnn(input_size, output_size):
 
     model.summary()
 
-    # wrap model in keras scikit learn wrapper to use yellowbrick
-
-    from scikeras.wrappers import KerasClassifier
-
-    model = KerasClassifier(
-        model,
-        # train_generator=train_generator,
-        # epochs=10,
-        # steps_per_epoch=len(train_generator.filenames) // batch_size,
-        # validation_data=validation_generator,
-        # validation_steps=len(train_generator.filenames) // batch_size,
-        # callbacks=[EarlyStopping(patience=1, restore_best_weights=True)],
-        batch_size=config["dnn"]["batch"],
-        fit__epochs=config["dnn"]["epochs"],
-        # validation_split=config['model']['split_ratio'],
-        # validation_data=(X_test, val_labels_ndry),
-        fit__verbose=config["dnn"]["verbose"],
-        # class_weight=class_weights,
-        # use_multiprocessing=True,
-        # callbacks=[tf_callbacks],
-    )
+    model = sklearnise_keras(model)
 
     return model
 
@@ -456,7 +459,7 @@ if __name__ == "__main__":
         # save the trained model as a pickle file
         if config["model"]["save"]:
             if config["model"]["name"] == "dnn":
-                trained_model.save(model_file)
+                trained_model.model_.save(model_file)
             else:
                 pickle.dump(trained_model, open(model_file, "wb"))
 
@@ -469,6 +472,7 @@ if __name__ == "__main__":
                 model_file.exists()
             ), f"The trained model does not exist for the prediction at: {model_file}"
             trained_model = load_model(model_file)
+            trained_model = sklearnise_keras(trained_model)
         else:
             trained_model = pickle.load(open(model_file, "rb"))
 
