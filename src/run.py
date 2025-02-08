@@ -149,6 +149,8 @@ def apply_balancer(X, y):
 def load_dnn(input_size, output_size):
     metrics = ["accuracy", "Precision", "Recall"]
 
+    print("\nOutput_size: ", output_size)
+
     optim = None
     if config["dnn"]["optimizer"] == "adam":
         optim = Adam(learning_rate=config["dnn"]["lr"])
@@ -225,7 +227,6 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
         neptune_cbk = NeptuneCallback(run=nt_run, base_namespace="metrics/keras")
         tf_callbacks.append(neptune_cbk)
 
-    print("\nOutput_size: ", output_size)
     print("train_labels: ", y_train)
     print("val_labels: ", y_test)
     print("Train_data shape: ", X_train.shape)
