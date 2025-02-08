@@ -149,25 +149,21 @@ def apply_balancer(X, y):
 
 def sklearnise_keras(keras_model):
     # wrap model in keras scikit learn wrapper to use yellowbrick
-    from scikeras.wrappers import KerasClassifier
+    from keras.api.wrappers import SKLearnClassifier
 
-    return KerasClassifier(
+    return SKLearnClassifier(
         keras_model,
-        # train_generator=train_generator,
-        # epochs=10,
-        # steps_per_epoch=len(train_generator.filenames) // batch_size,
-        # validation_data=validation_generator,
-        # validation_steps=len(train_generator.filenames) // batch_size,
-        # callbacks=[EarlyStopping(patience=1, restore_best_weights=True)],
-        batch_size=config["dnn"]["batch"],
-        fit__epochs=config["dnn"]["epochs"],
-        # validation_split=config['model']['split_ratio'],
-        # validation_data=(X_test, val_labels_ndry),
-        fit__verbose=config["dnn"]["verbose"],
-        # class_weight=class_weights,
-        # use_multiprocessing=True,
-        # callbacks=[tf_callbacks],
+        warm_start=True,
+        fit_kwargs={
+            "epochs": config["dnn"]["epochs"],
+            "verbose": config["dnn"]["verbose"],
+        },
     )
+
+    # return KerasClassifier(
+    #     keras_model,
+    #     batch_size=config["dnn"]["batch"],
+    # )
 
 
 def load_dnn(input_size, output_size):
@@ -472,7 +468,7 @@ if __name__ == "__main__":
             ), f"The trained model does not exist for the prediction at: {model_file}"
             trained_model = load_model(model_file)
             trained_model = sklearnise_keras(trained_model)
-            trained_model.initialize(X_train, y_train)
+            # NOTE: initialize doesnt exist for this new keras wrapper
         else:
             trained_model = pickle.load(open(model_file, "rb"))
 
