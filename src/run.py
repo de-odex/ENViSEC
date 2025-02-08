@@ -264,7 +264,7 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     )
     # print(model.summary())
 
-    return model, model.history_
+    # return model, model.history_
 
 
 def score_predict(model, X, y):
@@ -289,35 +289,35 @@ def score_predict(model, X, y):
 def train_shallow(nt_run, model, X_train, y_train, X_test, y_test):
     """training of non-dnn models"""
     model.fit(X_train, y_train)
-    print("+" * 70)
-    train_metrics = score_predict(model, X_train, y_train)
-    print("\nTrain metrics (acc, pre, rec): ", train_metrics)
-    eval_metrics = score_predict(model, X_test, y_test)
-    print("\nTest metrics (acc, pre, rec): ", eval_metrics)
-    print("+" * 70)
+    # print("+" * 70)
+    # train_metrics = score_predict(model, X_train, y_train)
+    # print("\nTrain metrics (acc, pre, rec): ", train_metrics)
+    # eval_metrics = score_predict(model, X_test, y_test)
+    # print("\nTest metrics (acc, pre, rec): ", eval_metrics)
+    # print("+" * 70)
 
-    y_pred = model.predict(X_test)
-    # encoder = preprocessing.LabelEncoder() # need to check
+    # y_pred = model.predict(X_test)
+    # # encoder = preprocessing.LabelEncoder() # need to check
+    # # y_pred_label = list(encoder.inverse_transform(y_pred))
+    # # y_test_label = list(encoder.inverse_transform(y_test))
+
+    # classes_file = Path(config["data_dir"]) / config["predict"]["classes_file"]
+    # encoder = preprocessing.LabelEncoder()  # need to check
+    # encoder.classes_ = np.load(classes_file, allow_pickle=True)
+
+    # # y_pred_index = [np.argmax(y, axis=None, out=None) for y in y_pred]
+    # # y_pred_label = list(encoder.inverse_transform(y_pred_index))
+    # # y_test_index = [np.argmax(y, axis=None, out=None) for y in y_test]
+    # # y_test_label = list(encoder.inverse_transform(y_test_index))
     # y_pred_label = list(encoder.inverse_transform(y_pred))
     # y_test_label = list(encoder.inverse_transform(y_test))
 
-    classes_file = Path(config["data_dir"]) / config["predict"]["classes_file"]
-    encoder = preprocessing.LabelEncoder()  # need to check
-    encoder.classes_ = np.load(classes_file, allow_pickle=True)
+    # clf_matrix = metrics.confusion_matrix(y_true=y_test_label, y_pred=y_pred_label)
+    # clf_report = metrics.classification_report(
+    #     y_true=y_test_label, y_pred=y_pred_label, zero_division=0
+    # )  # output_dict=True
 
-    # y_pred_index = [np.argmax(y, axis=None, out=None) for y in y_pred]
-    # y_pred_label = list(encoder.inverse_transform(y_pred_index))
-    # y_test_index = [np.argmax(y, axis=None, out=None) for y in y_test]
-    # y_test_label = list(encoder.inverse_transform(y_test_index))
-    y_pred_label = list(encoder.inverse_transform(y_pred))
-    y_test_label = list(encoder.inverse_transform(y_test))
-
-    clf_matrix = metrics.confusion_matrix(y_true=y_test_label, y_pred=y_pred_label)
-    clf_report = metrics.classification_report(
-        y_true=y_test_label, y_pred=y_pred_label, zero_division=0
-    )  # output_dict=True
-
-    return clf_matrix, clf_report
+    # return clf_matrix, clf_report
 
 
 def model_train(nt_run, data):
@@ -361,15 +361,17 @@ def model_train(nt_run, data):
     print("Training model: ", model_name)
     print("#" * 70)
     if model_name.lower() != "dnn":
-        clf_matrix, clf_report = train_shallow(
-            nt_run, model, X_train, y_train, X_eval, y_eval
-        )
-        print("\n Classification Matrix (max): \n", clf_matrix)
-        print("\n Classification Report (max): \n", clf_report)
+        train_shallow(nt_run, model, X_train, y_train, X_eval, y_eval)
+        # clf_matrix, clf_report = train_shallow(
+        #     nt_run, model, X_train, y_train, X_eval, y_eval
+        # )
+        # print("\n Classification Matrix (max): \n", clf_matrix)
+        # print("\n Classification Report (max): \n", clf_report)
     else:
-        model, history = train_dnn(nt_run, model, X_train, y_train, X_eval, y_eval)
-        # Plot the training history
-        plot_history(config["model"]["path"] + "learnig_curves", history)
+        train_dnn(nt_run, model, X_train, y_train, X_eval, y_eval)
+        # model, history = train_dnn(nt_run, model, X_train, y_train, X_eval, y_eval)
+        # # Plot the training history
+        # plot_history(config["model"]["path"] + "learnig_curves", history)
 
     return model
 
@@ -462,9 +464,11 @@ if __name__ == "__main__":
     else:
         print("Used the trained model saved at: ", model_file)
         if config["model"]["name"] == "dnn":
-            assert os.path.exists(
+            assert Path(
                 model_file
-            ), f"The trained model does not exist for the prediction at: {model_file}"
+            ).exists(), (
+                f"The trained model does not exist for the prediction at: {model_file}"
+            )
             trained_model = load_model(model_file)
         else:
             trained_model = pickle.load(open(model_file, "rb"))
