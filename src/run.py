@@ -165,6 +165,7 @@ def load_dnn():
     def dynamic_model(X, y):
         input_size = X.shape[1]
         output_size = y.shape[1] if len(y.shape) > 1 else 1
+        print(f"{input_size=}, {output_size=}")
         metrics = ["accuracy", "Precision", "Recall"]
 
         optim = None
@@ -231,17 +232,17 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
 
     print()
     print(f"{output_size=}")
-    print(f"{y_train=}", y_train)
-    print(f"{y_test=}", y_test)
+    print(f"{y_train=}")
+    print(f"{y_test=}")
     print(f"{X_train.shape=}")
 
     X_train = X_train.values.astype(float)
     X_test = X_test.values.astype(float)
 
     # y_train_ndry = tf.keras.utils.to_categorical(x=y_train, num_classes=output_size)
-    # y_test_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
+    y_test_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
 
-    model.fit_kwargs["validation_data"] = (X_test, y_test)
+    model.fit_kwargs["validation_data"] = (X_test, y_test_ndry)
     model.fit_kwargs["callbacks"] = tf_callbacks
 
     # TODO correct categorizing of val_labels
@@ -259,10 +260,7 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     print("Class_weights: ", class_weights)
 
     # fit the model
-    model.fit(
-        X_train,
-        y_train,
-    )
+    model.fit(X_train, y_train)
     # print(model.summary())
 
     # return model, model.history_

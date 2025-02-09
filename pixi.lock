@@ -701,7 +701,7 @@ packages:
 - pypi: .
   name: envisec
   version: 0.1.0
-  sha256: 039dd4225e7b53565c40ba34909aa6c95e3e112381b09fe234c6334d450fc035
+  sha256: 618e58076d2e29645ea5ac50742e1dc4595ccd857d5d799426b30cfcd211e211
   requires_dist:
   - flask~=3.0
   - imbalanced-learn~=0.12
@@ -719,8 +719,8 @@ packages:
   - neptune~=1.13
   - neptune-tensorflow-keras~=2.2
   - neptune-sklearn~=2.1
+  - ipykernel~=6.29
   - pip~=25.0
-  - ipykernel
   requires_python: ~=3.11.0
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/exceptiongroup-1.2.2-pyhd8ed1ab_1.conda

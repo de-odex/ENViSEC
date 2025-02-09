@@ -144,7 +144,7 @@ models/
 results/logs/
 device-test.py
 test.ipynb
-.neptune_access.ini
+.neptune.ini
 check.py
 test.py
 
