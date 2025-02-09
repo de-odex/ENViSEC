@@ -1,6 +1,6 @@
 data_dir: data/ #/home/guru/ENViSEC/data/
-data_file: processed/IoT-23.csv # processed/EdgeIIoTset.csv # relative to data_dir
-result_dir: results/
+data_file: processed/EdgeIIoTset.csv # processed/EdgeIIoTset.csv # relative to data_dir
+result_dir: results2/
 debug: False # mode: turn debugging mode True for preprocessing on debug_rows samples.
 debug_rows: 30000 # if debug: True, consider the number of data rows for the experiment.
 minority_threshold: 500 # filter out the minority classes with threshold value.
@@ -35,11 +35,14 @@ model: # settings for training and testing experiments
     # for tracking the experiments in neptune.ai,
     # If True, make sure you have correctly configured '.neptune_config.ini' file
 dnn:
-  epochs: 204 # default 200
-  batch: 16
+  epochs: 200 # default 200
+  batch: 256
   lr: 0.01
   patience: 100
   optimizer: adam # optimizer can be adam or sgd or any other
   dropout: 0.2 # dropout rate
   verbose: 2 # display the running information of the trainig or hide, 2 means show the info
   loss: categorical_crossentropy # categorical_crossentropy for multiclass or binary_crossentropy for binary classification
+
+predict:
+  classes_file: classes.npy

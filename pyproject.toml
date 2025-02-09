@@ -8,7 +8,6 @@ dependencies = [
     "flask~=3.0",
     "imbalanced-learn~=0.12",
     "imblearn~=0.0",
-    # "ipython~=8.12.3",
     "numpy~=1.24",
     "pandas~=2.0",
     "pyyaml~=6.0",
@@ -19,11 +18,11 @@ dependencies = [
     "keras~=3.8",
     "matplotlib~=3.10",
     "tqdm~=4.67",
-    # "tensorrt-cu11~=10.8.0.43",
     "neptune~=1.13",
     "neptune-tensorflow-keras~=2.2",
     "neptune-sklearn~=2.1",
-    "scikeras~=0.13",
+    "ipykernel~=6.29",
+    "pip~=25.0",
 ]
 
 # "flask==3.0.3",

@@ -34,6 +34,7 @@ from sklearn import metrics
 
 from keras.api.models import load_model
 from keras.api.optimizers import Adam, SGD
+from keras.api.wrappers import SKLearnClassifier
 
 # import tensorflow_addons as tfa
 
@@ -149,8 +150,6 @@ def apply_balancer(X, y):
 
 def sklearnise_keras(keras_model, warm_start=False):
     # wrap model in keras scikit learn wrapper to use yellowbrick
-    from keras.api.wrappers import SKLearnClassifier
-
     return SKLearnClassifier(
         keras_model,
         warm_start=warm_start,
@@ -162,34 +161,39 @@ def sklearnise_keras(keras_model, warm_start=False):
     )
 
 
-def load_dnn(input_size, output_size):
-    metrics = ["accuracy", "Precision", "Recall"]
+def load_dnn():
+    def dynamic_model(X, y):
+        input_size = X.shape[1]
+        output_size = y.shape[1] if len(y.shape) > 1 else 1
+        metrics = ["accuracy", "Precision", "Recall"]
 
-    optim = None
-    if config["dnn"]["optimizer"] == "adam":
-        optim = Adam(learning_rate=config["dnn"]["lr"])
-    elif config["dnn"]["optimizer"] == "sgd":
-        optim = SGD(learning_rate=config["dnn"]["lr"])
-    else:
-        optim = config["dnn"]["optimizer"]
+        optim = None
+        if config["dnn"]["optimizer"] == "adam":
+            optim = Adam(learning_rate=config["dnn"]["lr"])
+        elif config["dnn"]["optimizer"] == "sgd":
+            optim = SGD(learning_rate=config["dnn"]["lr"])
+        else:
+            optim = config["dnn"]["optimizer"]
 
-    # Setup the model
-    model = None
-    match config["model"]["name"].lower():
-        case "dnn":
-            model = create_DNN(input_size, output_size)
-        case "lstm":
-            model = create_LSTM(input_size, output_size, config["dnn"]["dropout"])
-        case _:
-            raise ValueError("Model type required")
+        # Setup the model
+        model = None
+        match config["model"]["name"].lower():
+            case "dnn":
+                model = create_DNN(input_size, output_size)
+            case "lstm":
+                model = create_LSTM(input_size, output_size, config["dnn"]["dropout"])
+            case _:
+                raise ValueError("Model type required")
 
-    model.compile(optimizer=optim, loss=config["dnn"]["loss"], metrics=metrics)
-    # Lets save our current model state so we can reload it later
-    model.save_weights(str(config["model"]["path"] / "pre-fit.weights.h5"))
+        model.compile(optimizer=optim, loss=config["dnn"]["loss"], metrics=metrics)
+        # Lets save our current model state so we can reload it later
+        model.save_weights(str(config["model"]["path"] / "pre-fit.weights.h5"))
 
-    model.summary()
+        model.summary()
 
-    model = sklearnise_keras(model)
+        return model
+
+    model = sklearnise_keras(dynamic_model)
 
     return model
 
@@ -225,26 +229,27 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
         neptune_cbk = NeptuneCallback(run=nt_run, base_namespace="metrics/keras")
         tf_callbacks.append(neptune_cbk)
 
-    print("\nOutput_size: ", output_size)
-    print("train_labels: ", y_train)
-    print("val_labels: ", y_test)
-    print("Train_data shape: ", X_train.shape)
+    print()
+    print(f"{output_size=}")
+    print(f"{y_train=}", y_train)
+    print(f"{y_test=}", y_test)
+    print(f"{X_train.shape=}")
 
     X_train = X_train.values.astype(float)
     X_test = X_test.values.astype(float)
 
-    # train_labels_ndry = tf.keras.utils.to_categorical(
-    #     x=y_train, num_classes=output_size
-    # )
-    # val_labels_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
+    # y_train_ndry = tf.keras.utils.to_categorical(x=y_train, num_classes=output_size)
+    # y_test_ndry = tf.keras.utils.to_categorical(x=y_test, num_classes=output_size)
 
     model.fit_kwargs["validation_data"] = (X_test, y_test)
     model.fit_kwargs["callbacks"] = tf_callbacks
 
-    # print("\ntrain_labels: \n", train_labels_ndry[:2])
     # TODO correct categorizing of val_labels
-    # print("val_labels: \n", val_labels_ndry[:2])
-    print("\nX sample: \n", X_train[:2])
+    # print()
+    # print(f"{y_train_ndry[:2]=}")
+    # print(f"{y_test_ndry[:2]=}")
+    print()
+    print(f"{X_train[:2]=}")
     print("-" * 70)
     # multi-level class weights
     class_weights = class_weight.compute_class_weight(
@@ -332,7 +337,7 @@ def model_train(nt_run, data):
             model = LinearSVC(verbose=True)
             model = CalibratedClassifierCV(model)
         case "rf" | "randomforest":
-            model = RandomForestClassifier(verbose=1)
+            model = RandomForestClassifier(n_jobs=-1, verbose=1)
         case "dt" | "decisiontree":
             model = DecisionTreeClassifier()
         case "gb" | "gradientboosting":
@@ -340,9 +345,7 @@ def model_train(nt_run, data):
         case "nb" | "naivebayes":
             model = GaussianNB()
         case "basic-dnn" | "dnn":
-            input_size = X_train.shape[1]
-            output_size = len(set(list(y_train)))
-            model = load_dnn(input_size, output_size)
+            model = load_dnn()
         case _:
             print(
                 "\nModelSelectionError, please select the right model! Not found: ",
@@ -421,6 +424,8 @@ if __name__ == "__main__":
     if config["model"]["use_neptune"]:
         print("\n" + "-" * 30 + "Neptune" + "-" * 30 + "\n")
         nt_run = init_neptune(str(config["model"]["path"]))
+    else:
+        nt_run = None
 
     if config["debug"]:
         config["model"]["path"] = config["model"]["path"].rsplit("/", 1)[0] + "-debug/"
