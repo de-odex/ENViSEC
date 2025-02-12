@@ -23,7 +23,7 @@ from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn import preprocessing
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier, HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC, LinearSVC
 from sklearn.naive_bayes import GaussianNB
@@ -343,6 +343,8 @@ def model_train(nt_run, data):
             model = DecisionTreeClassifier()
         case "gb" | "gradientboosting":
             model = GradientBoostingClassifier(verbose=1)
+        case "hgb" | "histgradientboosting":
+            model = HistGradientBoostingClassifier(verbose=1)
         case "nb" | "naivebayes":
             model = GaussianNB()
         case "basic-dnn" | "dnn":
