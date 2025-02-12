@@ -20,7 +20,6 @@ from configparser import ConfigParser
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 import yaml
 
 
@@ -62,6 +61,7 @@ def utilize_gpu():
     """
     Utilise GPU if available, otherwise CPU
     """
+    import tensorflow as tf
     print("\n" + "+" * 40)
     gpus = tf.config.list_physical_devices("GPU")
     gpu_devices = tf.config.experimental.list_physical_devices("GPU")
