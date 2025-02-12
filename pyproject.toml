@@ -14,7 +14,7 @@ dependencies = [
     "schedule~=1.1",
     "scikit-learn~=1.0",
     "seaborn~=0.13.2",
-    "tensorflow>=2.13,<3",
+    "tensorflow>=2.16.1,<3",
     "keras~=3.8",
     "matplotlib~=3.10",
     "tqdm~=4.67",
@@ -23,25 +23,8 @@ dependencies = [
     "neptune-sklearn~=2.1",
     "ipykernel~=6.29",
     "pip~=25.0",
+    "joblib~=1.4.2",
 ]
-
-# "flask==3.0.3",
-# "imbalanced-learn==0.12.3",
-# "imblearn==0.0",
-# "ipython==8.12.3",
-# "numpy==1.24.3",
-# "pandas==2.0.3",
-# "pyyaml==6.0.2",
-# "schedule==1.1.0",
-# "scikit-learn==1.0.2",
-# "seaborn==0.13.2",
-# "tensorflow~=2.15",
-# "matplotlib>=3.10.0,<4",
-# "tqdm>=4.67.1,<5",
-# "tensorrt-cu11>=10.8.0.43,<11",
-# "neptune>=1.13.0,<2",
-# "neptune-tensorflow-keras>=2.2.2,<3",
-# "neptune-sklearn>=2.1.4,<3",
 
 [tool.pixi.project]
 channels = ["conda-forge"]
