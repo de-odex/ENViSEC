@@ -1,3 +1,5 @@
+import joblib
+
 from neptune.integrations.sklearn import (
     create_classifier_summary,
 )
@@ -43,51 +45,62 @@ def log_metrics(
     #     trained_model, X_train, X_test, y_train, y_test
     # )
 
-    print("metric: classifier summary")
-    nt_run["metrics/summary"] = create_classifier_summary(
-        trained_model,
-        X_train,
-        X_test,
-        y_train,
-        y_test,
-        log_charts=False,
-    )
+    with joblib.parallel_config(backend='threading', n_jobs=-1):
+        print("metric: classifier summary")
+        nt_run["metrics/summary"] = create_classifier_summary(
+            trained_model,
+            X_train,
+            X_test,
+            y_train,
+            y_test,
+            log_charts=False,
+        )
 
-    print("metric: classification report")
-    classification_report = create_classification_report_chart(
-        trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-    )
-    print("metric: confusion matrix")
-    confusion_matrix = create_confusion_matrix_chart(
-        trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-    )
-    print("metric: roc auc")
-    roc_auc = create_roc_auc_chart(
-        trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-    )
-    print("metric: precision recall")
-    precision_recall = create_precision_recall_chart(
-        trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-    )
-    print("metric: class prediction error")
-    class_prediction_error = create_class_prediction_error_chart(
-        trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-    )
-    if classification_report:
-        nt_run["metrics/summary"][
-            "diagnostics_charts/classification_report"
-        ] = classification_report
-    if confusion_matrix:
-        nt_run["metrics/summary"][
-            "diagnostics_charts/confusion_matrix"
-        ] = confusion_matrix
-    if roc_auc:
-        nt_run["metrics/summary"]["diagnostics_charts/ROC_AUC"] = roc_auc
-    if precision_recall:
-        nt_run["metrics/summary"][
-            "diagnostics_charts/precision_recall"
-        ] = precision_recall
-    if class_prediction_error:
-        nt_run["metrics/summary"][
-            "diagnostics_charts/class_prediction_error"
-        ] = class_prediction_error
+        print("metric: classification report")
+        classification_report = create_classification_report_chart(
+            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
+        )
+        if classification_report:
+            nt_run["metrics/summary"][
+                "diagnostics_charts/classification_report"
+            ] = classification_report
+        nt_run.sync(True)
+
+        print("metric: confusion matrix")
+        confusion_matrix = create_confusion_matrix_chart(
+            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
+        )
+        if confusion_matrix:
+            nt_run["metrics/summary"][
+                "diagnostics_charts/confusion_matrix"
+            ] = confusion_matrix
+        nt_run.sync(True)
+
+        print("metric: roc auc")
+        roc_auc = create_roc_auc_chart(
+            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
+        )
+        if roc_auc:
+            nt_run["metrics/summary"]["diagnostics_charts/ROC_AUC"] = roc_auc
+        nt_run.sync(True)
+
+        print("metric: precision recall")
+        precision_recall = create_precision_recall_chart(
+            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
+        )
+        if precision_recall:
+            nt_run["metrics/summary"][
+                "diagnostics_charts/precision_recall"
+            ] = precision_recall
+        nt_run.sync(True)
+
+        print("metric: class prediction error")
+        class_prediction_error = create_class_prediction_error_chart(
+            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
+        )
+        if class_prediction_error:
+            nt_run["metrics/summary"][
+                "diagnostics_charts/class_prediction_error"
+            ] = class_prediction_error
+        nt_run.sync(True)
+
