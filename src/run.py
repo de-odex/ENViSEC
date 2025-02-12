@@ -146,6 +146,7 @@ def apply_balancer(X, y):
 
 def sklearnise_keras(keras_model, warm_start=False):
     from keras.api.wrappers import SKLearnClassifier
+
     # wrap model in keras scikit learn wrapper to use yellowbrick
     return SKLearnClassifier(
         keras_model,
@@ -161,6 +162,7 @@ def sklearnise_keras(keras_model, warm_start=False):
 def load_dnn():
     from keras.api.optimizers import Adam, SGD
     from src.models import create_DNN, create_LSTM
+
     def dynamic_model(X, y):
         input_size = X.shape[1]
         output_size = y.shape[1] if len(y.shape) > 1 else 1
@@ -201,6 +203,7 @@ def load_dnn():
 def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     """train the ML model"""
     import tensorflow as tf
+
     # model_path = config['result_dir'] + config['model']['name'] \
     #              + '-' + str(config['dnn']['epochs']) + '/'
 
@@ -374,6 +377,7 @@ def model_train(nt_run, data):
 def test_model(model, X_test, y_test, output_size):
     """test the trained model with testing data."""
     import tensorflow as tf
+
     print("\n" + "-" * 35 + "Testing" + "-" * 35)
 
     # Generate generalization metrics
@@ -463,20 +467,27 @@ if __name__ == "__main__":
             print("\n" + "-" * 35 + "Training" + "-" * 35)
             trained_model = model_train(nt_run, data)
         else:
-            trained_model = model_train(nt_run, data)
+            import joblib
+
+            with joblib.parallel_config(backend="threading", n_jobs=-1):
+                trained_model = model_train(nt_run, data)
 
         # save the trained model as a pickle file
         if config["model"]["save"]:
-            # if config["model"]["name"] == "dnn":
-            #     trained_model.model_.save(model_file)
-            # else:
-            #     pickle.dump(trained_model, open(model_file, "wb"))
-            pickle.dump(trained_model, open(model_file, "wb"))
+            try:
+                # if config["model"]["name"] == "dnn":
+                #     trained_model.model_.save(model_file)
+                # else:
+                #     pickle.dump(trained_model, open(model_file, "wb"))
+                pickle.dump(trained_model, open(model_file, "wb"))
+                print("The final trained model is saved at: ", model_file)
+            except pickle.PicklingError:
+                print("Failed to save the trained model")
 
-        print("The final trained model is saved at: ", model_file)
         print("\n" + "-" * 35 + "Training Completed" + "-" * 35 + "\n")
     else:
         from keras.api.models import load_model
+
         print("Used the trained model saved at: ", model_file)
         # if config["model"]["name"] == "dnn":
         #     assert (
