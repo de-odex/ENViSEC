@@ -421,7 +421,21 @@ if __name__ == "__main__":
 
     if config["model"]["use_neptune"]:
         print("\n" + "-" * 30 + "Neptune" + "-" * 30 + "\n")
-        nt_run = init_neptune(str(config["model"]["path"]))
+        tags = [
+            config["model"]["name"].lower(),
+            f"data={Path(data_file).stem}",
+            f"balancer={config['apply_balancer']}",
+        ]
+        match config["model"]["name"].lower():
+            case "basic-dnn" | "dnn":
+                tags.append(
+                    [
+                        f"epochs={config['dnn']['epochs']}",
+                        f"batch={config['dnn']['batch']}",
+                        f"learning_rate={config['dnn']['lr']}",
+                    ]
+                )
+        nt_run = init_neptune(tags)
     else:
         nt_run = None
 

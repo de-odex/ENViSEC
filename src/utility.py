@@ -35,7 +35,7 @@ def load_config(yaml_file):
             return exc
 
 
-def init_neptune(exp_name):
+def init_neptune(tags):
     """return neptune init object if you are using neptune"""
     import neptune
 
@@ -48,7 +48,7 @@ def init_neptune(exp_name):
     api_token = nt_config["neptune_access"]["api_token"]
 
     nt_run = neptune.init_run(
-        project=project, api_token=api_token, name="ENViSEC", tags=exp_name
+        project=project, api_token=api_token, name="ENViSEC", tags=tags
     )  # your neptune credentials
 
     # save configuration and module file to the neptune.
