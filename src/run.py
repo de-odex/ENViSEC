@@ -23,7 +23,11 @@ from imblearn.over_sampling import SMOTE
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn import preprocessing
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.ensemble import GradientBoostingClassifier, HistGradientBoostingClassifier, RandomForestClassifier
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    HistGradientBoostingClassifier,
+    RandomForestClassifier,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC, LinearSVC
 from sklearn.naive_bayes import GaussianNB
@@ -46,7 +50,17 @@ from src.utility import (
 print("\n\n\nimport done\n\n\n")
 
 
-def split_data(data):
+Split = tuple[
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.Series,
+    pd.Series,
+    pd.Series,
+]
+
+
+def split_data(data: pd.DataFrame) -> Split:
     """split the dataset into train and test"""
     clf_type = config["model"]["type"]  # 'binary' or 'multiclass'
     label_cols = ["multi_label"]
@@ -67,6 +81,7 @@ def split_data(data):
         np.save(classes_file, encoder.classes_)
         # encoding train labels
         y = encoder.transform(y)
+        y = pd.Series(y)
 
     X = data.drop(label_cols, axis=1)
     # 80% for training and 20% for eval and test,
@@ -77,7 +92,7 @@ def split_data(data):
     X_eval, X_test, y_eval, y_test = train_test_split(
         X_eval_test, y_eval_test, test_size=0.50, random_state=config["model"]["seed"]
     )
-    return X_train, X_eval, X_test, y_train, y_eval, y_test
+    return X_train, X_eval, X_test, pd.Series(y_train), pd.Series(y_eval), pd.Series(y_test)
 
 
 def filter_minority_classes(df, minor_threshold):
@@ -320,7 +335,7 @@ def train_shallow(nt_run, model, X_train, y_train, X_test, y_test):
     # return clf_matrix, clf_report
 
 
-def model_train(nt_run, data):
+def model_train(nt_run, data: Split):
     """Train and test the model using the training data"""
     model_name = config["model"]["name"]
     # print('y_labels on total data: ', set(list(data.multi_label)))
@@ -330,6 +345,10 @@ def model_train(nt_run, data):
     # apply class balancer(s) if that is enabled at config.yaml
     if config["apply_balancer"]:
         X_train, y_train = apply_balancer(X=X_train, y=y_train)
+
+    if config["model"]["use_neptune"]:
+        metrics2.upload_df(nt_run, "X_train_balance", X_train.head(20))
+        metrics2.upload_df(nt_run, "y_train_balance", y_train.head(20))
 
     match model_name.lower():
         case "svm" | "svc":
@@ -456,11 +475,21 @@ if __name__ == "__main__":
     df = load_data(data_file)
     if "label" in df.columns:
         df = df.drop(columns=["label"], axis=1)
+    if config["model"]["use_neptune"]:
+        metrics2.upload_df(nt_run, "data", df.head(20))
 
     if minor_threshold >= 0:
         df = filter_minority_classes(df, minor_threshold)
 
     X_train, X_eval, X_test, y_train, y_eval, y_test = data = split_data(df)
+
+    if config["model"]["use_neptune"]:
+        metrics2.upload_df(nt_run, "X_train", X_train.head(20))
+        metrics2.upload_df(nt_run, "y_train", y_train.head(20))
+        metrics2.upload_df(nt_run, "X_eval", X_eval.head(20))
+        metrics2.upload_df(nt_run, "y_eval", y_eval.head(20))
+        metrics2.upload_df(nt_run, "X_test", X_test.head(20))
+        metrics2.upload_df(nt_run, "y_test", y_test.head(20))
 
     if config["train"]:
         # use_gpu = False

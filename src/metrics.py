@@ -1,8 +1,10 @@
 import joblib
 
+from io import StringIO
 from neptune.integrations.sklearn import (
     create_classifier_summary,
 )
+from neptune.types import File
 from neptune_sklearn_charts import (
     create_classification_report_chart,
     create_confusion_matrix_chart,
@@ -102,3 +104,9 @@ def log_metrics(
 
     print("syncing metrics")
     nt_run.sync(wait=True)
+
+
+def upload_df(nt_run, name, df):
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+    nt_run[f"sample/{name}"].upload(File.from_stream(csv_buffer, extension="csv"))
