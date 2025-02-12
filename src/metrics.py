@@ -45,6 +45,7 @@ def log_metrics(
     #     trained_model, X_train, X_test, y_train, y_test
     # )
 
+    nt_run.sync()
     with joblib.parallel_config(backend="threading", n_jobs=-1):
         print("metric: classifier summary")
         nt_run["metrics/summary"] = create_classifier_summary(
@@ -64,7 +65,6 @@ def log_metrics(
             nt_run["metrics/summary"][
                 "diagnostics_charts/classification_report"
             ] = classification_report
-        nt_run.sync(wait=True)
 
         print("metric: confusion matrix")
         confusion_matrix = create_confusion_matrix_chart(
@@ -74,7 +74,6 @@ def log_metrics(
             nt_run["metrics/summary"][
                 "diagnostics_charts/confusion_matrix"
             ] = confusion_matrix
-        nt_run.sync(wait=True)
 
         print("metric: roc auc")
         roc_auc = create_roc_auc_chart(
@@ -82,7 +81,6 @@ def log_metrics(
         )
         if roc_auc:
             nt_run["metrics/summary"]["diagnostics_charts/ROC_AUC"] = roc_auc
-        nt_run.sync(wait=True)
 
         print("metric: precision recall")
         precision_recall = create_precision_recall_chart(
@@ -92,7 +90,6 @@ def log_metrics(
             nt_run["metrics/summary"][
                 "diagnostics_charts/precision_recall"
             ] = precision_recall
-        nt_run.sync(wait=True)
 
         print("metric: class prediction error")
         class_prediction_error = create_class_prediction_error_chart(
@@ -102,4 +99,5 @@ def log_metrics(
             nt_run["metrics/summary"][
                 "diagnostics_charts/class_prediction_error"
             ] = class_prediction_error
-        nt_run.sync(wait=True)
+
+    nt_run.sync(wait=True)
