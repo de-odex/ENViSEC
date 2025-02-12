@@ -100,4 +100,5 @@ def log_metrics(
                 "diagnostics_charts/class_prediction_error"
             ] = class_prediction_error
 
+    print("syncing metrics")
     nt_run.sync(wait=True)
