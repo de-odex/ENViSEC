@@ -516,6 +516,21 @@ if __name__ == "__main__":
 
     SKLearnClassifier.predict_proba = predict_proba
 
+    # require fit
+    old_sklearn_tags = SKLearnClassifier.__sklearn_tags__
+
+    def __sklearn_tags__(self):
+        tags = old_sklearn_tags()
+        tags.requires_fit = True
+        return tags
+
+    SKLearnClassifier.__sklearn_tags__ = __sklearn_tags__
+
+    def __sklearn_is_fitted__(self):
+        return hasattr(self, "model_") and self.model_
+
+    SKLearnClassifier.__sklearn_is_fitted__ = __sklearn_is_fitted__
+
     # ====
     # MAIN
     # ====
