@@ -375,8 +375,6 @@ def model_train(nt_run, data: Split):
         # model, history = train_dnn(nt_run, model, X_train, y_train, X_eval, y_eval)
         # # Plot the training history
         # plot_history(config["model"]["path"] + "learnig_curves", history)
-        model = CalibratedClassifierCV(model, method="sigmoid", cv="prefit")
-        model.fit(X_eval, y_eval)
 
     return model
 

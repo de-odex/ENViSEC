@@ -13,6 +13,8 @@ from neptune_sklearn_charts import (
     create_class_prediction_error_chart,
 )
 
+from traceback import print_exc
+
 
 def log_metrics(
     nt_run,
@@ -59,48 +61,88 @@ def log_metrics(
             log_charts=False,
         )
 
-        print("metric: classification report")
-        classification_report = create_classification_report_chart(
-            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-        )
-        if classification_report:
-            nt_run["metrics/summary"][
-                "diagnostics_charts/classification_report"
-            ] = classification_report
+        try:
+            print("metric: classification report")
+            classification_report = create_classification_report_chart(
+                trained_model,
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                classes=encoder.classes_,
+            )
+            if classification_report:
+                nt_run["metrics/summary"][
+                    "diagnostics_charts/classification_report"
+                ] = classification_report
+        except:
+            print_exc()
 
-        print("metric: confusion matrix")
-        confusion_matrix = create_confusion_matrix_chart(
-            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-        )
-        if confusion_matrix:
-            nt_run["metrics/summary"][
-                "diagnostics_charts/confusion_matrix"
-            ] = confusion_matrix
+        try:
+            print("metric: confusion matrix")
+            confusion_matrix = create_confusion_matrix_chart(
+                trained_model,
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                classes=encoder.classes_,
+            )
+            if confusion_matrix:
+                nt_run["metrics/summary"][
+                    "diagnostics_charts/confusion_matrix"
+                ] = confusion_matrix
+        except:
+            print_exc()
 
-        print("metric: roc auc")
-        roc_auc = create_roc_auc_chart(
-            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-        )
-        if roc_auc:
-            nt_run["metrics/summary"]["diagnostics_charts/ROC_AUC"] = roc_auc
+        try:
+            print("metric: roc auc")
+            roc_auc = create_roc_auc_chart(
+                trained_model,
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                classes=encoder.classes_,
+            )
+            if roc_auc:
+                nt_run["metrics/summary"]["diagnostics_charts/ROC_AUC"] = roc_auc
+        except:
+            print_exc()
 
-        print("metric: precision recall")
-        precision_recall = create_precision_recall_chart(
-            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-        )
-        if precision_recall:
-            nt_run["metrics/summary"][
-                "diagnostics_charts/precision_recall"
-            ] = precision_recall
+        try:
+            print("metric: precision recall")
+            precision_recall = create_precision_recall_chart(
+                trained_model,
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                classes=encoder.classes_,
+            )
+            if precision_recall:
+                nt_run["metrics/summary"][
+                    "diagnostics_charts/precision_recall"
+                ] = precision_recall
+        except:
+            print_exc()
 
-        print("metric: class prediction error")
-        class_prediction_error = create_class_prediction_error_chart(
-            trained_model, X_train, X_test, y_train, y_test, classes=encoder.classes_
-        )
-        if class_prediction_error:
-            nt_run["metrics/summary"][
-                "diagnostics_charts/class_prediction_error"
-            ] = class_prediction_error
+        try:
+            print("metric: class prediction error")
+            class_prediction_error = create_class_prediction_error_chart(
+                trained_model,
+                X_train,
+                X_test,
+                y_train,
+                y_test,
+                classes=encoder.classes_,
+            )
+            if class_prediction_error:
+                nt_run["metrics/summary"][
+                    "diagnostics_charts/class_prediction_error"
+                ] = class_prediction_error
+        except:
+            print_exc()
 
     print("syncing metrics")
     nt_run.sync(wait=True)
