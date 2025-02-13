@@ -597,6 +597,10 @@ if __name__ == "__main__":
     encoder.classes_ = np.load(classes_file, allow_pickle=True)
 
     if config["model"]["use_neptune"]:
+        if config["model"]["name"] == "dnn":
+            n_jobs = 1
+        else:
+            n_jobs = -1
         metrics2.log_metrics(
             nt_run,
             trained_model,
@@ -607,6 +611,7 @@ if __name__ == "__main__":
             y_eval,
             train_metrics,
             eval_metrics,
+            n_jobs=n_jobs,
         )
 
     if config["test"]:

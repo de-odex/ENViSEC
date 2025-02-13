@@ -26,6 +26,8 @@ def log_metrics(
     y_test,
     train_metric,
     eval_metric,
+    *,
+    n_jobs=-1,
 ):
     # from neptune.integrations.tensorflow_keras import NeptuneCallback
     # print('\n' + '-' * 30 + 'Neptune' + '-' * 30 + '\n')
@@ -50,7 +52,7 @@ def log_metrics(
     # )
 
     nt_run.sync()
-    with joblib.parallel_config(backend="threading", n_jobs=-1):
+    with joblib.parallel_config(backend="threading", n_jobs=n_jobs):
         print("metric: classifier summary")
         nt_run["metrics/summary"] = create_classifier_summary(
             trained_model,
