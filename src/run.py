@@ -37,6 +37,8 @@ from sklearn import metrics
 
 # import tensorflow_addons as tfa
 
+from keras.api.wrappers import SKLearnClassifier
+
 import src.metrics as metrics2
 from src.utility import (
     init_neptune,
@@ -92,7 +94,14 @@ def split_data(data: pd.DataFrame) -> Split:
     X_eval, X_test, y_eval, y_test = train_test_split(
         X_eval_test, y_eval_test, test_size=0.50, random_state=config["model"]["seed"]
     )
-    return X_train, X_eval, X_test, pd.Series(y_train), pd.Series(y_eval), pd.Series(y_test)
+    return (
+        X_train,
+        X_eval,
+        X_test,
+        pd.Series(y_train),
+        pd.Series(y_eval),
+        pd.Series(y_test),
+    )
 
 
 def filter_minority_classes(df, minor_threshold):
@@ -160,8 +169,6 @@ def apply_balancer(X, y):
 
 
 def sklearnise_keras(keras_model, warm_start=False):
-    from keras.api.wrappers import SKLearnClassifier
-
     # wrap model in keras scikit learn wrapper to use yellowbrick
     return SKLearnClassifier(
         keras_model,
@@ -174,42 +181,43 @@ def sklearnise_keras(keras_model, warm_start=False):
     )
 
 
-def load_dnn():
+def dynamic_model(X, y):
     from keras.api.optimizers import Adam, SGD
     from src.models import create_DNN, create_LSTM
 
-    def dynamic_model(X, y):
-        input_size = X.shape[1]
-        output_size = y.shape[1] if len(y.shape) > 1 else 1
-        print(f"{input_size=}, {output_size=}")
-        metrics = ["accuracy", "Precision", "Recall"]
+    input_size = X.shape[1]
+    output_size = y.shape[1] if len(y.shape) > 1 else 1
+    print(f"{input_size=}, {output_size=}")
+    metrics = ["accuracy", "Precision", "Recall"]
 
-        optim = None
-        if config["dnn"]["optimizer"] == "adam":
-            optim = Adam(learning_rate=config["dnn"]["lr"])
-        elif config["dnn"]["optimizer"] == "sgd":
-            optim = SGD(learning_rate=config["dnn"]["lr"])
-        else:
-            optim = config["dnn"]["optimizer"]
+    optim = None
+    if config["dnn"]["optimizer"] == "adam":
+        optim = Adam(learning_rate=config["dnn"]["lr"])
+    elif config["dnn"]["optimizer"] == "sgd":
+        optim = SGD(learning_rate=config["dnn"]["lr"])
+    else:
+        optim = config["dnn"]["optimizer"]
 
-        # Setup the model
-        model = None
-        match config["model"]["name"].lower():
-            case "dnn":
-                model = create_DNN(input_size, output_size)
-            case "lstm":
-                model = create_LSTM(input_size, output_size, config["dnn"]["dropout"])
-            case _:
-                raise ValueError("Model type required")
+    # Setup the model
+    model = None
+    match config["model"]["name"].lower():
+        case "dnn":
+            model = create_DNN(input_size, output_size)
+        case "lstm":
+            model = create_LSTM(input_size, output_size, config["dnn"]["dropout"])
+        case _:
+            raise ValueError("Model type required")
 
-        model.compile(optimizer=optim, loss=config["dnn"]["loss"], metrics=metrics)
-        # Lets save our current model state so we can reload it later
-        model.save_weights(str(config["model"]["path"] / "pre-fit.weights.h5"))
+    model.compile(optimizer=optim, loss=config["dnn"]["loss"], metrics=metrics)
+    # Lets save our current model state so we can reload it later
+    model.save_weights(str(config["model"]["path"] / "pre-fit.weights.h5"))
 
-        model.summary()
+    model.summary()
 
-        return model
+    return model
 
+
+def load_dnn():
     model = sklearnise_keras(dynamic_model)
 
     return model
@@ -223,30 +231,6 @@ def train_dnn(nt_run, model, X_train, y_train, X_test, y_test):
     #              + '-' + str(config['dnn']['epochs']) + '/'
 
     output_size = len(set(list(y_train)))
-
-    tf_callbacks = [
-        tf.keras.callbacks.EarlyStopping(
-            patience=config["dnn"]["patience"],
-            monitor="val_loss",
-            mode="min",
-            restore_best_weights=True,
-        ),
-        tf.keras.callbacks.ModelCheckpoint(
-            filepath=str(config["model"]["path"] / "checkpoint_model.h5"),
-            save_best_only=True,
-            monitor="val_loss",
-            mode="min",
-        ),
-        tf.keras.callbacks.TensorBoard(log_dir=str(config["model"]["path"] / "logs")),
-    ]
-
-    if config["model"]["use_neptune"]:
-        from neptune.integrations.tensorflow_keras import NeptuneCallback
-
-        # print('\n' + '-' * 30 + 'Neptune' + '-' * 30 + '\n')
-        # nt_run = init_neptune(config['model']['path'])
-        neptune_cbk = NeptuneCallback(run=nt_run, base_namespace="metrics/keras")
-        tf_callbacks.append(neptune_cbk)
 
     print()
     print(f"{output_size=}")
@@ -361,7 +345,7 @@ def model_train(nt_run, data: Split):
         case "dt" | "decisiontree":
             model = DecisionTreeClassifier()
         case "gb" | "gradientboosting":
-            model = GradientBoostingClassifier(verbose=1)
+            model = GradientBoostingClassifier(n_iter_no_change=10, verbose=1)
         case "hgb" | "histgradientboosting":
             model = HistGradientBoostingClassifier(verbose=1)
         case "nb" | "naivebayes":
@@ -454,7 +438,7 @@ if __name__ == "__main__":
         ]
         match config["model"]["name"].lower():
             case "basic-dnn" | "dnn":
-                tags.append(
+                tags.extend(
                     [
                         f"epochs={config['dnn']['epochs']}",
                         f"batch={config['dnn']['batch']}",
@@ -470,6 +454,50 @@ if __name__ == "__main__":
 
     if config["train"]:
         Path(config["model"]["path"]).mkdir(parents=True, exist_ok=True)
+
+    from keras.api.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
+
+    tf_callbacks = [
+        EarlyStopping(
+            patience=config["dnn"]["patience"],
+            monitor="val_loss",
+            mode="min",
+            restore_best_weights=True,
+        ),
+        ModelCheckpoint(
+            filepath=str(config["model"]["path"] / "checkpoint_model.h5"),
+            save_best_only=True,
+            monitor="val_loss",
+            mode="min",
+        ),
+        TensorBoard(log_dir=str(config["model"]["path"] / "logs")),
+    ]
+
+    if config["model"]["use_neptune"]:
+        from neptune.integrations.tensorflow_keras import NeptuneCallback
+
+        # print('\n' + '-' * 30 + 'Neptune' + '-' * 30 + '\n')
+        # nt_run = init_neptune(config['model']['path'])
+        neptune_cbk = NeptuneCallback(run=nt_run, base_namespace="metrics/keras")
+        tf_callbacks.append(neptune_cbk)
+
+    # monkeypatch SKLearnClassifier to not save fit_kwargs["callbacks"]
+    old_getstate = SKLearnClassifier.__getstate__
+    def __getstate__(self, *k, **kw):
+        old_getstate(self, *k, **kw)
+        state = self.__dict__.copy()
+        if "fit_kwargs" in state and "callbacks" in state["fit_kwargs"]:
+            del state["fit_kwargs"]["callbacks"]
+        return state
+
+    old_setstate = SKLearnClassifier.__setstate__
+    def __setstate__(self, state, *k, **kw):
+        old_setstate(self, state, *k, **kw)
+        self.__dict__.update(state)
+        state["fit_kwargs"]["callbacks"] = tf_callbacks
+
+    SKLearnClassifier.__getstate__ = __getstate__
+    SKLearnClassifier.__setstate__ = __setstate__
 
     # loading the data from the processed csv file for training/testing
     df = load_data(data_file)
@@ -510,7 +538,9 @@ if __name__ == "__main__":
                 #     trained_model.model_.save(model_file)
                 # else:
                 #     pickle.dump(trained_model, open(model_file, "wb"))
+                trained_model.fit_kwargs["callbacks"] = []
                 pickle.dump(trained_model, open(model_file, "wb"))
+                trained_model.fit_kwargs["callbacks"] = tf_callbacks
                 print("The final trained model is saved at: ", model_file)
             except pickle.PicklingError:
                 print("Failed to save the trained model")
