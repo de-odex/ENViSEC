@@ -140,7 +140,11 @@ def create_feature_importance_chart(regressor, X_train, y_train):
 
     try:
         fig, ax = plt.subplots()
-        visualizer = FeatureImportances(deepcopy(regressor), is_fitted=True, ax=ax)
+        visualizer = FeatureImportances(
+            deepcopy(regressor),
+            # is_fitted=True,
+            ax=ax,
+        )
         visualizer.fit(X_train, y_train)
         visualizer.finalize()
 
@@ -185,7 +189,11 @@ def create_residuals_chart(regressor, X_train, X_test, y_train, y_test):
 
     try:
         fig, ax = plt.subplots()
-        visualizer = ResidualsPlot(regressor, is_fitted=True, ax=ax)
+        visualizer = ResidualsPlot(
+            regressor,
+            # is_fitted=True,
+            ax=ax,
+        )
         visualizer.fit(X_train, y_train)
         visualizer.score(X_test, y_test)
         visualizer.finalize()
@@ -230,7 +238,11 @@ def create_prediction_error_chart(regressor, X_train, X_test, y_train, y_test):
 
     try:
         fig, ax = plt.subplots()
-        visualizer = PredictionError(regressor, is_fitted=True, ax=ax)
+        visualizer = PredictionError(
+            regressor,
+            # is_fitted=True,
+            ax=ax,
+        )
         visualizer.fit(X_train, y_train)
         visualizer.score(X_test, y_test)
         visualizer.finalize()
@@ -360,7 +372,11 @@ def create_classification_report_chart(
     try:
         fig, ax = plt.subplots()
         visualizer = ClassificationReport(
-            classifier, support=True, is_fitted=True, ax=ax, classes=classes
+            classifier,
+            support=True,
+            # is_fitted=True,
+            ax=ax,
+            classes=classes,
         )
         visualizer.fit(X_train, y_train)
         visualizer.score(X_test, y_test)
@@ -410,7 +426,12 @@ def create_confusion_matrix_chart(
 
     try:
         fig, ax = plt.subplots()
-        visualizer = ConfusionMatrix(classifier, is_fitted=True, ax=ax, classes=classes)
+        visualizer = ConfusionMatrix(
+            classifier,
+            # is_fitted=True,
+            ax=ax,
+            classes=classes,
+        )
         visualizer.fit(X_train, y_train)
         visualizer.score(X_test, y_test)
         visualizer.finalize()
@@ -455,7 +476,12 @@ def create_roc_auc_chart(classifier, X_train, X_test, y_train, y_test, classes=N
 
     try:
         fig, ax = plt.subplots()
-        visualizer = ROCAUC(classifier, is_fitted=True, ax=ax, classes=classes)
+        visualizer = ROCAUC(
+            classifier,
+            # is_fitted=True,
+            ax=ax,
+            classes=classes,
+        )
         visualizer.fit(X_train, y_train)
         visualizer.score(X_test, y_test)
         visualizer.finalize()
@@ -521,7 +547,7 @@ def create_precision_recall_chart(
         fig, ax = plt.subplots()
         visualizer = PrecisionRecallCurve(
             classifier,
-            is_fitted=True,
+            # is_fitted=True,
             ax=ax,
             classes=classes,
             iso_f1_curves=True,
@@ -577,7 +603,10 @@ def create_class_prediction_error_chart(
     try:
         fig, ax = plt.subplots()
         visualizer = ClassPredictionError(
-            classifier, is_fitted=True, ax=ax, classes=classes
+            classifier,
+            # is_fitted=True,
+            ax=ax,
+            classes=classes,
         )
         visualizer.fit(X_train, y_train)
         visualizer.score(X_test, y_test)
@@ -719,7 +748,11 @@ def create_silhouette_chart(model, X, **kwargs):
 
         try:
             fig, ax = plt.subplots()
-            visualizer = SilhouetteVisualizer(model, is_fitted=True, ax=ax)
+            visualizer = SilhouetteVisualizer(
+                model,
+                # is_fitted=True,
+                ax=ax,
+            )
             visualizer.fit(X)
             visualizer.finalize()
             charts.append(File.as_image(fig))
