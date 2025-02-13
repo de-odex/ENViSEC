@@ -483,6 +483,7 @@ if __name__ == "__main__":
 
     # monkeypatch SKLearnClassifier to not save fit_kwargs["callbacks"]
     old_getstate = SKLearnClassifier.__getstate__
+
     def __getstate__(self, *k, **kw):
         old_getstate(self, *k, **kw)
         state = self.__dict__.copy()
@@ -491,6 +492,7 @@ if __name__ == "__main__":
         return state
 
     old_setstate = SKLearnClassifier.__setstate__
+
     def __setstate__(self, state, *k, **kw):
         old_setstate(self, state, *k, **kw)
         self.__dict__.update(state)
@@ -591,9 +593,9 @@ if __name__ == "__main__":
     if config["test"]:
         output_size = len(set(list(y_train)))
 
-        if config["model"]["name"] == "dnn":
-            test_model(trained_model, X_test, y_test, output_size)
-        else:
-            result = trained_model.score(X_test, y_test)
-            print("result: ", result)
+        # if config["model"]["name"] == "dnn":
+        #     test_model(trained_model, X_test, y_test, output_size)
+        # else:
+        result = trained_model.score(X_test, y_test)
+        print("result: ", result)
         print("\n" + "-" * 35 + "Testing Completed" + "-" * 35 + "\n")
