@@ -521,7 +521,7 @@ def create_precision_recall_chart(
         fig, ax = plt.subplots()
         visualizer = PrecisionRecallCurve(
             classifier,
-            # is_fitted=True,
+            is_fitted=True,
             ax=ax,
             classes=classes,
             iso_f1_curves=True,
