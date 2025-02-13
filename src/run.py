@@ -520,7 +520,7 @@ if __name__ == "__main__":
     old_sklearn_tags = SKLearnClassifier.__sklearn_tags__
 
     def __sklearn_tags__(self):
-        tags = old_sklearn_tags()
+        tags = old_sklearn_tags(self)
         tags.requires_fit = True
         return tags
 
