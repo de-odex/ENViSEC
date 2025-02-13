@@ -455,6 +455,10 @@ if __name__ == "__main__":
     if config["train"]:
         Path(config["model"]["path"]).mkdir(parents=True, exist_ok=True)
 
+    # ==============
+    # MONKEYPATCHING
+    # ==============
+
     from keras.api.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 
     tf_callbacks = [
@@ -500,6 +504,21 @@ if __name__ == "__main__":
 
     SKLearnClassifier.__getstate__ = __getstate__
     SKLearnClassifier.__setstate__ = __setstate__
+
+    # add predict_proba to SKLearnClassifier
+    def predict_proba(self, X):
+        import sklearn
+        from keras.src.wrappers.fixes import _validate_data
+
+        sklearn.base.check_is_fitted(self)
+        X = _validate_data(self, X, reset=False)
+        return self.model_.predict(X)
+
+    SKLearnClassifier.predict_proba = predict_proba
+
+    # ====
+    # MAIN
+    # ====
 
     # loading the data from the processed csv file for training/testing
     df = load_data(data_file)
